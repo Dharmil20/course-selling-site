@@ -7,7 +7,9 @@ const { UserModel, PurchaseModel } = require("./db");
 const { z } = require("zod");
 const app = express();
 
-mongoose.connect("mongodb+srv://dharmiltrivedi5:4BTC5fjyuZX1zCjj@cluster0.nqozu.mongodb.net/course-selling-site");
+mongoose.connect(
+  "mongodb+srv://dharmiltrivedi5:4BTC5fjyuZX1zCjj@cluster0.nqozu.mongodb.net/course-selling-site"
+);
 app.use(express.json());
 
 const userRouter = express.Router();
@@ -88,8 +90,34 @@ userRouter.post("/login", async (req, res) => {
   }
 });
 
-userRouter.get("/purchases", (req, res) => {});
+userRouter.get("/purchases", auth, async (req, res) => {
+  const userId = req.userId;
 
+  try{
+    const purchases = await PurchaseModel.find({userId,});
+    res.json({
+      purchases
+    })
+  } catch(e){
+    res.json({
+      message: "Invalid TOken Provided"
+    })
+  }
+});
+
+function auth(req, res, next) {
+  const token = req.body.token;
+  const decodedData = jwt.verify(token, JWT_SECRET);
+
+  if(decodedData){
+    req.userId = decodedData.id;
+    next();
+  } else{
+    res.status(403).json({
+      message: "Invalid Credentials"
+    })
+  }
+}
 module.exports = {
   userRouter: userRouter,
 };
