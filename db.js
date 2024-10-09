@@ -1,33 +1,34 @@
 const mongoose = require("mongoose");
-const { number } = require("zod");
-
+const ObjectId = mongoose.Schema.Types.ObjectId;
 const Schema = mongoose.schema;
-const ObjectId = Schema.ObjectId;
+require("dotenv").config();
+
+mongoose.connect(process.env.MONGO_URL);
 
 const User = new Schema({
   name: { type: String, required: true },
   email: { type: String, unique: true, required: true },
-  password: {type: String, required: true},
+  password: { type: String, required: true },
+});
+
+const Admin = new Schema({
+  name: { type: String, required: true },
+  email: { type: String, unique: true, required: true },
+  password: { type: String, required: true },
+});
+
+const Course = new Schema({
+  title: String,
+  description: String,
+  price: Number,
+  imageURL: String,
+  creatorId: ObjectId,
 });
 
 const Purchase = new Schema({
-    userId: ObjectId,
-    courseId: ObjectId,
-})
-
-const Admin = new Schema({
-    name: { type: String, required: true },
-    email: { type: String, unique: true, required: true },
-    password: {type: String, required: true},
-})
-
-const Course = new Schema({
-    title: String,
-    description: String,
-    price: Number,
-    imageURL: String,
-    creatorId: ObjectId,
-})
+  userId: { type: ObjectId, ref: User },
+  courseId: { type: ObjectId, ref: Admin },
+});
 
 const UserModel = mongoose.model("users", User);
 const PurchaseModel = mongoose.model("purchases", Purchase);
