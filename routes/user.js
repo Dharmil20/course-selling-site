@@ -1,10 +1,92 @@
+const bcrypt = require("bcrypt");
 const express = require("express");
+const jwt = require("jsonwebtoken");
+const JWT_SECRET = "randomdharmillovescoding";
+const { default: mongoose } = require("mongoose");
+const { UserModel, PurchaseModel } = require("./db");
+const { z } = require("zod");
+const app = express();
+
+mongoose.connect("mongodb+srv://dharmiltrivedi5:4BTC5fjyuZX1zCjj@cluster0.nqozu.mongodb.net/course-selling-site");
+app.use(express.json());
 
 const userRouter = express.Router();
 
-userRouter.post("/signup", (req, res) => {});
+userRouter.post("/signup", async (req, res) => {
+  const requiredBody = z.object({
+    email: z.string().min(3).max(30).email(),
+    name: z.string().min(3).max(30),
+    password: z
+      .string()
+      .min(8)
+      .max(30)
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d@$!%*?&]{8,30}$/,
+        "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character"
+      ),
+  });
 
-userRouter.post("/login", (req, res) => {});
+  const parsedDataWithSuccess = requiredBody.safeParse(req.body);
+
+  if (!parsedDataWithSuccess) {
+    res.json({
+      message: "Incorrect format",
+      error: parsedDataWithSuccess.error,
+    });
+    return;
+  }
+
+  const name = req.body.name;
+  const email = req.body.email;
+  const password = req.body.password;
+
+  const hashedPassword = await bcrypt.hash(password, 5);
+
+  try {
+    await UserModel.create({
+      email: email,
+      password: hashedPassword,
+      name: name,
+    });
+    res.json({
+      message: "User Signed Up!",
+    });
+  } catch (e) {
+    res.json({
+      message: "User Already Signed up!",
+    });
+  }
+});
+
+userRouter.post("/login", async (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+
+  const user = await UserModel.findOne({
+    email: email,
+  });
+
+  if (!user) {
+    res.json({
+      message: "User not signed up!",
+    });
+    return;
+  }
+
+  const passwordMatch = await bcrypt.compare(password, user.password);
+  try {
+    if (passwordMatch) {
+      const token = jwt.sign({ userId: user._id.toString() }, JWT_SECRET);
+      res.json({
+        token: token,
+      });
+    }
+  } catch (e) {
+    res.json({
+      message: "Invalid Credentials",
+    });
+  }
+});
 
 userRouter.get("/purchases", (req, res) => {});
 
