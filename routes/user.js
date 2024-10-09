@@ -3,7 +3,7 @@ const express = require("express");
 const jwt = require("jsonwebtoken");
 const JWT_SECRET = "randomdharmillovescoding";
 const { default: mongoose } = require("mongoose");
-const { UserModel, PurchaseModel } = require("./db");
+const { UserModel, PurchaseModel } = require("../db.js");
 const { z } = require("zod");
 const app = express();
 
