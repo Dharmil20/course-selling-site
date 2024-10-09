@@ -1,15 +1,13 @@
 const bcrypt = require("bcrypt");
 const express = require("express");
 const jwt = require("jsonwebtoken");
-const JWT_SECRET = "randomdharmillovescoding";
 const { default: mongoose } = require("mongoose");
 const { UserModel, PurchaseModel } = require("../db.js");
 const { z } = require("zod");
-const app = express();
-
-app.use(express.json());
+const { UserAuth } = require("../middlewares/user");
 
 const userRouter = express.Router();
+userRouter.use(express.json());
 
 userRouter.post("/signup", async (req, res) => {
   const requiredBody = z.object({
@@ -61,60 +59,60 @@ userRouter.post("/login", async (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
 
-  const user = await UserModel.findOne({
-    email: email,
-  });
+  const user = await UserModel.findOne({ email: email });
 
   if (!user) {
-    res.json({
+    return res.status(404).json({
       message: "User not signed up!",
     });
-    return;
   }
 
   const passwordMatch = await bcrypt.compare(password, user.password);
-  try {
-    if (passwordMatch) {
-      const token = jwt.sign({ userId: user._id.toString() }, JWT_SECRET);
-      res.json({
-        token: token,
-      });
-    }
-  } catch (e) {
-    res.json({
+  if (!passwordMatch) {
+    return res.status(401).json({
       message: "Invalid Credentials",
+    });
+  }
+
+  const token = jwt.sign({ userId: user._id.toString() }, process.env.JWT_USER_PASSWORD);
+
+  // Set the cookie with the token
+  res.cookie("token", token, {
+    httpOnly: true, // Prevents client-side access to the cookie
+    secure: process.env.NODE_ENV === "production", // Use secure cookies in production
+    maxAge: 24 * 60 * 60 * 1000, // 1 day
+    sameSite: "strict", // Helps prevent CSRF attacks
+  });
+
+  res.json({
+    message: "Logged in successfully",
+    token: token,
+  });
+});
+
+
+userRouter.get("/purchases", UserAuth, async (req, res) => {
+  const token = req.cookies.token; // Get the token from the cookies
+
+  if (!token) {
+    return res.status(401).json({ message: "No token provided" });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_USER_PASSWORD);
+    const userId = decoded.userId;
+
+    const purchases = await PurchaseModel.find({ userId });
+    res.json({
+      purchases,
+    });
+  } catch (e) {
+    res.status(401).json({
+      message: "Invalid Token Provided",
     });
   }
 });
 
-userRouter.get("/purchases", auth, async (req, res) => {
-  const userId = req.userId;
-
-  try{
-    const purchases = await PurchaseModel.find({userId,});
-    res.json({
-      purchases
-    })
-  } catch(e){
-    res.json({
-      message: "Invalid TOken Provided"
-    })
-  }
-});
-
-function auth(req, res, next) {
-  const token = req.body.token;
-  const decodedData = jwt.verify(token, JWT_SECRET);
-
-  if(decodedData){
-    req.userId = decodedData.id;
-    next();
-  } else{
-    res.status(403).json({
-      message: "Invalid Credentials"
-    })
-  }
-}
 module.exports = {
   userRouter: userRouter,
 };

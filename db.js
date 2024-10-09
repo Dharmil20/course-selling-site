@@ -3,8 +3,6 @@ const ObjectId = mongoose.Schema.Types.ObjectId;
 const Schema = mongoose.Schema;
 require("dotenv").config();
 
-mongoose.connect(process.env.MONGO_URL);
-
 const User = new Schema({
   name: { type: String, required: true },
   email: { type: String, unique: true, required: true },
@@ -22,7 +20,7 @@ const Course = new Schema({
   description: String,
   price: Number,
   imageURL: String,
-  creatorId: {type: ObjectId, ref: "admin"},
+  creatorId: {type: ObjectId, ref: "admins"},
 });
 
 const Purchase = new Schema({
@@ -32,7 +30,7 @@ const Purchase = new Schema({
 
 const UserModel = mongoose.model("users", User);
 const PurchaseModel = mongoose.model("purchases", Purchase);
-const AdminModel = mongoose.model("admin", Admin);
+const AdminModel = mongoose.model("admins", Admin);
 const CourseModel = mongoose.model("courses", Course);
 
 module.exports = {
