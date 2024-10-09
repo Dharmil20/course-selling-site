@@ -7,7 +7,7 @@ const { UserModel, PurchaseModel } = require("./db");
 const { z } = require("zod");
 const app = express();
 
-mongoose.connect(
+mongoose.connect( 
   "mongodb+srv://dharmiltrivedi5:4BTC5fjyuZX1zCjj@cluster0.nqozu.mongodb.net/course-selling-site"
 );
 app.use(express.json());
