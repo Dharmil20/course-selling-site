@@ -74,7 +74,10 @@ userRouter.post("/login", async (req, res) => {
     });
   }
 
-  const token = jwt.sign({ userId: user._id.toString() }, process.env.JWT_USER_PASSWORD);
+  const token = jwt.sign(
+    { userId: user._id.toString() },
+    process.env.JWT_USER_PASSWORD
+  );
 
   // Set the cookie with the token
   res.cookie("token", token, {
@@ -89,7 +92,6 @@ userRouter.post("/login", async (req, res) => {
     token: token,
   });
 });
-
 
 userRouter.get("/purchases", UserAuth, async (req, res) => {
   const token = req.cookies.token; // Get the token from the cookies
